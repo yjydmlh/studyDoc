@@ -1,0 +1,1471 @@
+
+
+
+
+大数据平台（ambari、hadoop）安装文档
+
+V1.05
+
+
+
+
+
+
+
+
+深圳市泰海网络科技服务有限公司
+技术部
+2014年09月22日
+版本历史记录
+
+
+日    期	版本号	版本内容	作者	修改内容
+2014-09-22	V1.0	初稿	严奕华	起草
+2014-09-30	V1.01		严奕华	1、	ambari选择mysql数据库
+2、	mysql数据库做主从配置
+3、	增加spark集群
+4、	补充集群验证和集群参数信息
+2014-10-08	V1.02		严奕华	1、	增加 Hadoop集群jvm参数配置
+2、	增加spark环境的jvm参数配置
+3、	集成spark到ganglia监控
+4、	Apache安装和升级以及openssl漏洞修复
+2014-10-09	V1.03		严奕华	1、	增加openssl，apache的安装
+2、	增加apache、php的升级替换
+3、	增加集群节点扩展部分
+2014-10-17	V1.04		严奕华	1、	增加openssh的安装
+2、	增加部署图
+3、	增加集群web端口
+2014-10-28	V1.05		严奕华	1、	更新generateAgent.sh
+2、增加附件章节
+3、调整顺序
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+目   录
+1	引言	- 8 -
+1.1	编写目的	- 8 -
+1.2	背景	- 8 -
+1.3	参考资料	- 8 -
+1.4	术语与缩写	- 8 -
+2	运行环境	- 8 -
+2.1	硬件环境	- 8 -
+2.2	软件环境	- 8 -
+3	部署方案	- 9 -
+4	安装过程	- 10 -
+4.1	安装OPENSSL	- 10 -
+4.1.1	下载最新的openssl包	- 10 -
+4.1.2	openssl编译安装	- 10 -
+4.2	安装OPENSSH	- 10 -
+4.2.1	下载最新的openssh包	- 10 -
+4.2.2	openssh编译安装	- 10 -
+4.3	安装APACHE	- 11 -
+4.3.1	下载最新的httpd包（httpd-2.4.10.tar.gz）	- 11 -
+4.3.2	安装编译依赖库	- 11 -
+4.3.3	下载编译安装apr包（apr-1.5.1.tar.gz）	- 11 -
+4.3.4	下载编译安装apr-util包（apr-util-1.5.4.tar.gz）	- 11 -
+4.3.5	下载编译安装pcre包（pcre-8.36.tar.gz）	- 11 -
+4.3.6	httpd编译安装	- 11 -
+4.3.7	验证httpd	- 12 -
+4.4	创建AMBARI、HDP本地源	- 12 -
+4.4.1	修改httpd.conf	- 12 -
+4.4.2	准备ambari和HDP 的源文件repo	- 12 -
+4.4.3	同步ambari、HDP网络源的包	- 12 -
+4.4.4	创建本地源	- 13 -
+4.5	安装ORACLE JDK1.7U60	- 13 -
+4.6	启用NTPD	- 13 -
+4.7	禁用IPTABLES	- 13 -
+4.8	设置UMASK	- 14 -
+4.9	设置最大文件打开数限制	- 14 -
+4.10	设置HOST	- 14 -
+4.11	配置SSH免登录	- 14 -
+4.11.1	生成主控机的公钥和私钥	- 14 -
+4.11.2	配置其它节点的免登陆	- 15 -
+4.11.3	其他server配置到其他节点的ssh免登录	- 15 -
+4.12	安装MYSQL	- 15 -
+4.12.1	安装mysql服务	- 15 -
+4.12.2	修改mysql的root用户密码	- 15 -
+4.12.3	mysql主从配置	- 16 -
+4.12.3.1	备份master数据库	- 16 -
+4.12.3.2	拷贝数据库到slave	- 16 -
+4.12.3.3	master库配置	- 16 -
+4.12.3.4	slave库配置	- 18 -
+4.13	创建AMBARI数据库和AMBARI用户	- 19 -
+4.13.1	创建ambari数据库	- 19 -
+4.13.2	创建ambari用户	- 19 -
+4.13.3	创建ambari数据库表	- 19 -
+4.13.4	授权ambari server服务器访问mysql数据库	- 20 -
+4.14	安装AMBARI SERVER	- 20 -
+4.15	启动AMBARI	- 22 -
+4.15.1	将hdp的源修改为本地源	- 22 -
+4.15.2	修改ambari server JVM参数	- 22 -
+4.15.3	修改namenode、datanode 、Journalnode 、zkfc、balancer JVM参数	- 22 -
+4.15.4	修改zookeeper JVM参数	- 23 -
+4.15.5	修改YARN JVM参数	- 24 -
+4.15.6	修改HBASE JVM参数	- 24 -
+4.15.7	增加spark的ganglia监控	- 24 -
+4.15.8	启动ambari server	- 25 -
+4.16	安装HDP集群	- 25 -
+4.16.1	输入集群的名称	- 25 -
+4.16.2	选择HDP版本	- 26 -
+4.16.3	配置集群机器的hosts和注册	- 27 -
+4.16.4	注册集群的hosts	- 28 -
+4.16.5	选择安装服务	- 29 -
+4.16.6	选择master	- 30 -
+4.16.7	选择salve和client	- 30 -
+4.16.8	初始化服务的配置项	- 31 -
+4.16.9	安装集群组件和启动集群	- 34 -
+4.16.10	集群HDFS NameNode HA	- 35 -
+4.16.11	选择Second NameNode的服务器	- 37 -
+4.16.12	创建NameNode的CheckPoint	- 37 -
+4.16.13	安装组件Additional NameNode和JournalNodes	- 38 -
+4.16.14	初始化JournalNodes	- 39 -
+4.16.15	启动组件	- 39 -
+4.16.16	初始化NameNode HA 元数据	- 40 -
+4.16.17	HBase Master HA	- 41 -
+4.17	修改HIVE和WEBHCAT的JVM启动参数	- 41 -
+4.17.1	修改hive-server2 JVM参数	- 41 -
+4.17.2	修改hive-metastore JVM参数	- 41 -
+4.17.3	修改webhcat JVM参数	- 42 -
+4.18	安装HADOOP扩展包	- 42 -
+4.19	安装SPARK集群	- 42 -
+4.19.1	安装scala	- 42 -
+4.19.2	安装spark	- 42 -
+4.19.3	配置环境变量	- 43 -
+4.19.4	配置slaves	- 43 -
+4.19.5	配置启动参数	- 43 -
+4.19.6	启动集群	- 44 -
+5	集成SPARK到GANGLIA监控	- 45 -
+5.1.1	创建/etc/ganglia/hdp/HDPSparkcluster目录	- 45 -
+5.1.2	创建/var/run/ganglia/hdp/HDPSparkcluster目录	- 45 -
+5.1.3	重启ganglia monitor	- 45 -
+6	验证HDP集群	- 46 -
+6.1	AMBARI的冒烟测试	- 46 -
+6.2	检查整个文件系统的健康状况	- 46 -
+6.3	检查NAMENODE的切换是否正常	- 48 -
+6.4	查看文件系统的基本信息和统计信息	- 49 -
+6.5	查看HIVE状态	- 51 -
+7	升级替换HDP集群的APACHE	- 52 -
+7.1	安装最新的APACHE和OPENSSL	- 52 -
+7.2	修改APACHE配置文件	- 52 -
+7.3	复制相关文件	- 52 -
+7.4	配置APACHE启动项	- 52 -
+8	升级替换NAGIOS服务器的PHP	- 53 -
+8.1	编译安装PHP包（PHP-5.6.1.TAR.GZ）	- 53 -
+9	HDP集群节点扩展	- 53 -
+9.1	生成模板压缩包	- 53 -
+9.2	下载脚本目录	- 53 -
+9.3	扩展节点	- 53 -
+9.4	验证扩展	- 54 -
+10	集群初始化数据导入	- 54 -
+10.1	抽取数据到HDFS	- 54 -
+11	集群关键参数	- 54 -
+11.1	集群WEB所用端口	- 54 -
+11.2	HDFS参数	- 54 -
+11.3	YARN参数	- 55 -
+11.4	MAPREDUCE2参数	- 56 -
+11.5	HIVE参数	- 56 -
+11.6	WEBHCAT参数	- 57 -
+11.7	HBASE参数	- 57 -
+11.8	ZOOKEEPER参数	- 57 -
+11.9	GANGLIA参数	- 57 -
+11.10	NAGIOS参数	- 57 -
+11.11	SPARK参数	- 57 -
+11.12	AMBARI参数	- 58 -
+12	附件	- 58 -
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1	引言
+1.1	编写目的
+
+1.2	背景
+
+1.3	参考资料
+
+1.4	术语与缩写
+词汇	描述（术语与缩写的描述）
+HDP	hadoop的缩写
+ZK	Zookeeper的缩写
+
+
+2	运行环境
+
+2.1	硬件环境
+用途	品牌	机型	CPU	内存	硬盘	数量
+master	HP DL380p Gen8	2U机架式服务器	Intel Xeon E5-2650 V2 * 2	16G,1600MHz,DDR3 *16	2.5寸 10K SAS 600G * 6	6
+slave	HP DL380p Gen8	2U机架式服务器	Intel Xeon E5-2650 V2 * 2	16G,1600MHz,DDR3 *16	2.5寸 10K SAS 600G * 16	3
+
+2.2	软件环境
+系统：Red Hat Enterprise Linux (RHEL)  6.4 (64-bit)
+	  系统盘采用raid方式，其他盘不需要。
+软件：yum、rpm、scp、 cur、 wget、pdsh、net-snmp-utils、snappy、ntpd
+	  createrepo（创建本地源那台机器需要安装，其他不用）
+	  openssl（redhat6.4自带的版本是openssl-1.1.0e-15.el6_5，需要升级为openssl-1.1.0e-16.el6_5以上）
+3	部署方案
+ 
+Master 服务部署：
+ 
+Slave服务部署：
+ 
+4	安装过程
+4.1	安装openssl
+4.1.1	下载最新的openssl包
+直接获取附件中的或者用下面命令下载：
+wget http://www.openssl.org/source/openssl-1.1.0i.tar.gz /usr
+4.1.2	openssl编译安装
+编译前先判断是否有/usr/local/ssl,有的话则备份：
+mv /usr/local/ssl  /usr/local/ssl_bak
+cd /usr
+tar –xzf openssl-1.1.0i.tar.gz
+cd openssl-1.1.0i
+./config   --prefix=/usr/local/ssl  shared zlib
+make && make install
+mv /usr/bin/openssl /usr/bin/openssl_bak
+mv /usr/include/openssl  /usr/include/openssl_bak
+ln -s /usr/local/ssl/bin/openssl /usr/bin/openssl
+ln -s /usr/local/ssl/include/openssl/ /usr/include/openssl
+echo "/usr/local/ssl/lib" >> /etc/ld.so.conf           //加载动态库
+
+4.2	安装openssh
+4.2.1	下载最新的openssh包
+直接获取附件中的或者用下面命令下载：
+wget http://ftp.jaist.ac.jp/pub/OpenBSD/OpenSSH/portable/openssh-6.7p1.tar.gz /usr
+4.2.2	openssh编译安装
+cd /usr
+tar –xzf openssh-6.7p1.tar.gz
+cd openssh-6.7p1
+./config  --with-ssl-dir=/usr/local/ssl --prefix=/usr/local/openssh
+make && make install
+4.3	安装apache
+4.3.1	下载最新的httpd包（httpd-2.4.10.tar.gz）
+直接获取附件中的或者用下面命令下载：
+wget http://www.eu.apache.org/dist//httpd/httpd-2.4.10.tar.gz /usr
+4.3.2	安装编译依赖库
+yum install expat-devel.x86_64
+yum -y install mod_ssl.x86_64
+yum -y install libtool.x86_64
+4.3.3	下载编译安装apr包（apr-1.5.1.tar.gz）
+直接获取附件中的或者用下面命令下载：
+cd /usr
+wget http://mirrors.cnnic.cn/apache//apr/apr-1.5.1.tar.gz 
+tar -xzf apr-1.5.1.tar.gz
+cd apr-1.5.1
+./configure 
+make && make install
+4.3.4	下载编译安装apr-util包（apr-util-1.5.4.tar.gz）
+直接获取附件中的或者用下面命令下载：
+cd /usr
+wget http://mirrors.cnnic.cn/apache//apr/apr-util-1.5.4.tar.gz
+tar -xzf apr-util-1.5.4.tar.gz
+cd apr-util-1.5.4
+./configure --with-apr=/usr/local/apr   
+make && make install
+4.3.5	下载编译安装pcre包（pcre-8.36.tar.gz）
+直接获取附件中的或者用下面命令下载：
+cd /usr
+wget http://sourceforge.net/projects/pcre/files/pcre/8.36/pcre-8.36.tar.gz/download
+tar -xzf pcre-8.36.tar.gz
+cd pcre-8.36
+./configure --prefix=/usr/local/pcre && make && make install
+
+4.3.6	httpd编译安装
+编译前先判断是否有/usr/local/httpd,有的话则备份：
+mv /usr/local/httpd  /usr/local/httpd_bak
+cd /usr
+tar –xzf httpd-2.4.10.tar.gz 
+cd httpd-2.4.10
+./configure --prefix=/usr/local/httpd  --enable-mods-shared=all --with-mpm=prefork --enable-ssl --enable-module=so --enable-proxy --enable-rewrite --with-ssl=/usr/local/ssl --with-apr=/usr/local/apr --with-pcre=/usr/local/pcre --with-libs= /lib64/libuuid.so.1
+make && make install
+强加密变更
+vi /usr/local/httpd/conf/extra/httpd-ssl.conf
+在90行添加以下代码：
+SSLProtocol -ALL +SSLv3 +TLSv1
+SSLCipherSuite RC4-SHA:AES256-SHA:AES128-SHA:DES-CBC3-SHA
+保存退出vi。
+4.3.7	验证httpd
+启动apache，不报错及进程在则正常。
+打开页面进行验证，能正常打开页面，看到https链接则正常。
+4.4	创建ambari、HDP本地源
+建立本地源的前提是安装apache，并配置好httpd.conf的默认路径为/var/www/html。
+4.4.1	修改httpd.conf
+进到apache的安装目录，修改httpd.conf，在其后面添加以下代码：
+# ambari
+Alias /ambari "/var/www/html/ambari"
+<Directory "/var/www/html/ambari">
+    Options Indexes FollowSymLinks
+    AllowOverride None
+    Require all granted
+</Directory>
+# hdp
+Alias /hdp "/var/www/html/hdp"
+<Directory "/var/www/html/hdp">
+    Options Indexes FollowSymLinks
+    AllowOverride None
+    Require all granted
+</Directory>
+
+4.4.2	准备ambari和HDP 的源文件repo
+wget http://public-repo-1.hortonworks.com/ambari/centos6/1.x/updates/1.6.0/ambari.repo /var/www/html
+vi /var/www/html/HDP.repo, 添加以下内容:
+[HDP-2.1.2.0]
+name=HDP
+baseurl=http://public-repo-1.hortonworks.com/HDP/centos6/2.x/updates/2.1.2.0/
+enabled=1
+gpgcheck=0
+4.4.3	同步ambari、HDP网络源的包
+cd /var/www/html
+mkdir ambari
+mkdir hdp
+reposync  -r HDP-UTILS-1.1.1.06
+reposync  -r HDP-UTILS-1.1.1.07
+reposync  -r ambari-1.x
+reposync  -r Updates-ambari
+
+将HDP-UTILS-1.1.1.06、HDP-UTILS-1.1.1.07、Updates-ambari-1.4.1.25、ambari-1.x复制到 /var/www/html/ambari下。
+
+reposync  -r HDP-2.1.2.0
+将HDP-2.1.2.0复制到/var/www/html/hdp下
+
+4.4.4	创建本地源
+cd /var/www/html/ambari
+createrepo ./
+
+cd /var/www/html/hdp
+createrepo ./
+
+备注：如果没有createrepo命令则执行yum install createrepo安装。
+
+4.5	安装ORACLE JDK1.7U60
+Jdk的tar包在附件中。
+下载jdk并解压安装到目录/usr/local/java/jdk1.7.0_60，安装完后设置环境变量。
+进入到安装jdk目录(cd /usr/local/java)
+执行如下命令：
+ln -s jdk1.7.0_60 jdk
+
+vi /etc/profile.d/bigdata.sh
+在该文件后面添加以下代码：
+
+export http_proxy="代理地址"
+export https_proxy="代理地址"
+export no_proxy=master3的机器名
+export JAVA_HOME=/usr/local/java/jdk
+export CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+export PATH=$JAVA_HOME/bin:$PATH:$HOME/bin
+ulimit -n 32768
+保存退出vi。
+执行生效命令：source /etc/profile.d/bigdata.sh
+4.6	启用NTPD
+与ntp 服务器进行同步时间，跟运维现在的线上环境保持一致。
+4.7	禁用iptables
+vi /etc/selinux/config
+将SELINUX=enforcing改为SELINUX=disabled
+
+执行以下命令：
+setenforce 0
+chkconfig iptables off 
+/etc/init.d/iptables stop
+
+
+4.8	设置umask
+修改/etc/bashrc 中”umask 002” 为”umask 022”
+执行命令：
+umask 022
+
+备注：
+022 代表如下：
+目录权限rwx r-x r-x (755) 这就是目录创建缺省权限
+文件权限rw- r-- r-- (644) 这就是文件创建缺省权限
+
+4.9	设置最大文件打开数限制
+
+修改/etc/security/limits.conf，添加以下2行：
+*   soft   nofile  32768
+*   soft   nofile  32768
+备注：
+The recommended maximum number of open file descriptors is 10000 or more.
+
+4.10	设置host
+vi /etc/hosts
+
+添加机器ip和hostname，如：
+10.79.11.222 master01.bigdata.sfp.com。
+
+4.11	配置ssh免登录
+
+4.11.1	生成主控机的公钥和私钥
+安装ambari server的机器作为master（即master3），需要配置该节点到其它节点的ssh免登录：
+cd ~
+ssh-keygen
+一直按回车，会生成默认的公钥和私钥：
+
+/root/.ssh/id_rsa.pub
+/root/.ssh/id_rsa.
+
+配置本地的免登录：
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys 
+设置权限：
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+4.11.2	配置其它节点的免登陆
+1、先安装expect
+	yum install expect
+2、下载脚本目录,参考章节9.2
+3、进到脚本目录，配置host文件，执行脚本命令 sh configSSH.sh 新增机器的密码
+备注：确保所有的新增机器的密码一样和脚本installRsaKey、scpRsaKey是可以执行的
+4.11.3	其他server配置到其他节点的ssh免登录
+cd ~
+ssh-keygen
+一直按回车，会生成默认的公钥和私钥：
+
+/root/.ssh/id_rsa.pub
+/root/.ssh/id_rsa.
+
+将公钥信息员追加到其他节点的~/.ssh/authorized_keys文件：
+cat ~/.ssh/id_rsa.pub | ssh -p 22 root@ hostname 'cat >> ~/.ssh/authorized_keys'
+如：
+cat ~/.ssh/id_rsa.pub | ssh -p 22 root@10.79.11.223 'cat >> ~/.ssh/authorized_keys' 
+
+
+4.12	安装mysql
+4.12.1	安装mysql服务
+在2台master机器上安装mysql服务：
+yum install mysql-server
+
+4.12.2	修改mysql的root用户密码
+#关闭mysql:
+# service mysqld stop
+#然后:
+# mysqld_safe --skip-grant-tables
+启动mysql:
+service mysqld start
+mysql -u root
+mysql> UPDATE mysql.user SET Password=PASSWORD('sfpay@mysql5') WHERE user='root';
+
+mysql> flush privileges;
+mysql>\q;
+
+4.12.3	 mysql主从配置
+
+4.12.3.1	备份master数据库
+/var/lib/mysql
+tar zcvf hive.tar.gz /var/lib/mysql/hive/
+tar zcvf ambari.tar.gz /var/lib/mysql/ambari/
+
+4.12.3.2	拷贝数据库到slave
+登录到master机器：
+cd /var/lib/mysql
+scp hive.tar.gz root@slave_ip:/var/lib/mysql/
+scp ambari.tar.gz root@slave_ip:/var/lib/mysql/
+登录到salve机器：
+cd /var/lib/mysql
+tar zxvf hive.tar.gz
+tar zxvf ambari.tar.gz
+
+rm -rf *.tar.gz
+
+4.12.3.3	master库配置
+1、配置二进制日志文件目录
+mkdir -p /var/log/mysql
+chown -R mysql:mysql /var/log/mysql
+2、 配置my.cnf文件
+cp /etc/my.cnf /etc/my.cnf.bak
+vi /etc/my.cnf
+在[mysqld]下面添加以下参数：
+server-id = 223
+default-storage-engine=INNODB
+binlog_format=mixed
+innodb_buffer_pool_size = 20G
+innodb_data_file_path = ibdata1:1G:autoextend
+innodb_file_per_table = 1
+innodb_thread_concurrency = 16
+innodb_flush_log_at_trx_commit = 1
+innodb_log_buffer_size = 64M
+innodb_log_file_size = 256M
+innodb_max_dirty_pages_pct = 50
+innodb_flush_method = O_DIRECT
+
+
+#打开二进制日志，最好放在不同的硬盘上，减小IO消耗
+log_bin = /var/log/mysql/mysql-bin.log
+#设置二进制日志保存日期
+expire_logs_day=10
+#设置每个binlog文件的大小
+max_binlog_size=500M 
+read-only=0
+binlog-do-db=hive
+binlog-do-db=ambari
+binlog-do-db=test
+binlog-ignore-db=mysql
+binlog-ignore-db=test
+
+在[mysqld_safe]下面添加以下参数：
+open-files-limit = 8192
+3、重启mysql
+service mysqld restart
+如果重启失败，则证明配置文件错误，需重新检查配置文件。
+4、查看master状态
+命令mysql服务器:
+mysql> show master status;
+如果出现类似以下的信息，则master配置成功。
++------------------+----------+--------------+------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB |
++------------------+----------+--------------+------------------+
+| mysql-bin.000003 |     1067 | hive,test    | mysql            |
++------------------+----------+--------------+------------------+
+1 row in set (0.00 sec)
+
+5、配置建立同步用的数据库账户
+主库需要提供一个账户让从库对起连接并同步，用命令mysql服务器：
+mysql>GRANT REPLICATION SLAVE ON *.* TO 'root'@'slave_ip' IDENTIFIED BY  'sfpay@mysql5';
+mysql>flush privileges;
+4.12.3.4	slave库配置
+1、配置my.cnf文件
+vi /etc/my.cnf
+server-id=226
+master-host=10.79.11.223
+master-user=root
+master-password=sfpay@mysql5
+master-port=3306
+replicate-do-db=hive
+replicate-do-db=ambari
+replicate-do-db =test
+replicate-ignore-db=mysql
+master-connect-retry=60
+default-storage-engine=INNODB
+
+2、重启mysql
+service mysqld restart
+3、查看slave状态
+mysql>show slave status\G;  显示如下：
+*************************** 1. row ***************************
+               Slave_IO_State: Waiting for master to send event
+                  Master_Host: 10.79.11.223
+                  Master_User: root
+                  Master_Port: 3306
+                Connect_Retry: 60
+              Master_Log_File: mysql-bin.000003
+          Read_Master_Log_Pos: 1067
+               Relay_Log_File: mysqld-relay-bin.000010
+                Relay_Log_Pos: 550
+        Relay_Master_Log_File: mysql-bin.000003
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: Yes
+              Replicate_Do_DB: hive,test
+          Replicate_Ignore_DB: mysql
+           Replicate_Do_Table: 
+       Replicate_Ignore_Table: 
+      Replicate_Wild_Do_Table: 
+  Replicate_Wild_Ignore_Table: 
+                   Last_Errno: 0
+                   Last_Error: 
+                 Skip_Counter: 0
+          Exec_Master_Log_Pos: 1067
+              Relay_Log_Space: 706
+              Until_Condition: None
+               Until_Log_File: 
+                Until_Log_Pos: 0
+           Master_SSL_Allowed: No
+           Master_SSL_CA_File: 
+           Master_SSL_CA_Path: 
+              Master_SSL_Cert: 
+            Master_SSL_Cipher: 
+               Master_SSL_Key: 
+        Seconds_Behind_Master: 0
+Master_SSL_Verify_Server_Cert: No
+                Last_IO_Errno: 0
+                Last_IO_Error: 
+               Last_SQL_Errno: 0
+               Last_SQL_Error: 
+1 row in set (0.01 sec)
+
+如果Slave_IO_Running、Slave_SQL_Running均为YES的话，则mysql从服务器配置成功。
+如果Slave_SQL_Running为NO的话，则执行以下：
+mysql>slave stop;
+mysql>change master to master_host='master_ip', master_user='root', master_password='sfpay@mysql5',MASTER_LOG_FILE='master状态的File',MASTER_LOG_POS=master状态的Position;
+mysql>slave start;
+
+4.13	创建ambari数据库和ambari用户
+4.13.1	创建ambari数据库
+CREATE DATABASE `ambari` /*!40100 DEFAULT CHARACTER SET utf8 */;
+4.13.2	创建ambari用户
+CREATE USER 'ambari' IDENTIFIED BY 'bigdata';
+4.13.3	创建ambari数据库表
+执行SQL脚本 
+
+4.13.4	授权ambari server服务器访问mysql数据库
+insert into mysql.user(Host,User,Password) values("10.79.11.204","ambari",password("bigdata"));
+
+grant all privileges on *.* to ambari@10.79.11.204 identified by 'bigdata';
+
+flush privileges;
+
+
+
+4.14	安装ambari server
+在master3的机器上安装python的mysql驱动：
+yum install MySQL-python.x86_64
+在master3的机器上安装ambari server。
+vi ambari.repo，添加以下：
+
+[ambari-1.x]
+name=Ambari 1.x
+baseurl=http://10.79.11.231/ambari/
+gpgcheck=0
+gpgkey=http://public-repo-1.hortonworks.com/ambari/centos6/RPM-GPG-KEY/RPM-GPG-KEY-Jenkins
+enabled=1
+priority=1
+
+[HDP-UTILS-1.1.1.06]
+name=Hortonworks Data Platform Utils Version - HDP-UTILS-1.1.1.06
+baseurl=http://10.79.11.231/ambari/
+gpgcheck=0
+gpgkey=http://public-repo-1.hortonworks.com/HDP-UTILS-1.1.1.06/repos/centos6/RPM-GPG-KEY/RPM-GPG-KEY-Jenkins
+enabled=1
+priority=1
+
+[HDP-UTILS-1.1.1.07]
+name=Hortonworks Data Platform Utils Version - HDP-UTILS-1.1.1.07
+baseurl=http://10.79.11.231/ambari/
+gpgcheck=0
+gpgkey=http://public-repo-1.hortonworks.com/HDP-UTILS-1.1.1.07/repos/centos6/RPM-GPG-KEY/RPM-GPG-KEY-Jenkins
+enabled=1
+priority=1
+
+[Updates-ambari]
+name=ambari - Updates
+baseurl=http://10.79.11.231/ambari/
+gpgcheck=0
+gpgkey=http://public-repo-1.hortonworks.com/ambari/centos6/RPM-GPG-KEY/RPM-GPG-KEY-Jenkins
+enabled=1
+保存退出vi。
+priority=1
+
+安装：
+yum install ambari-server
+一直默认选择后执行：
+ambari-server setup -j /usr/local/java/jdk
+
+Ambari-server daemon is configured to run under user 'root'. Change this setting [y/n] (n)
+回车
+OK to continue [y/n] (y)
+回车
+Enter advanced database configuration [y/n] (n)
+y
+==============================================================================
+Choose one of the following options:
+[1] - PostgreSQL (Embedded)
+[2] - Oracle
+[3] - MySQL
+[4] - PostgreSQL
+Enter choice (1)：3
+
+Hostname (localhost): 10.79.11.203
+Port (3306): 3306
+Database Name (ambari): ambari
+Username (ambari): ambari
+Enter Database Password (bigdata): 
+Copying JDBC drivers to server resources...
+Configuring remote database connection properties...
+WARNING: Before starting Ambari Server, you must run the following DDL against the database to create the schema: /var/lib/ambari-server/resources/Ambari-DDL-MySQL-CREATE.sql
+Proceed with configuring remote database connection properties [y/n] (y)? y
+Copying JDBC drivers to server resources...
+Ambari Server 'setup' completed successfully.
+
+
+
+4.15	启动ambari
+4.15.1	将hdp的源修改为本地源
+vi /var/lib/ambari-server/resources/stacks/HDP/2.0.6/repos/repoinfo.xml
+
+将baseurl的值改为:
+http://127.0.0.1/hdp
+
+
+4.15.2	修改ambari server JVM参数
+将export AMBARI_JVM_ARGS=$AMBARI_JVM_ARGS' -Xms512m -Xmx2048m -Djava.security.auth.login.config=/etc/ambari-server/conf/krb5JAASLo    gin.conf -Djava.security.krb5.conf=/etc/krb5.conf -Djavax.security.auth.useSubjectCredsOnly=false'
+
+修改为：
+export AMBARI_JVM_ARGS=$AMBARI_JVM_ARGS' -Xms4g -Xmx4g -Xmn1g -XX:PermSize=512m -XX:MaxPermSize=512m -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+UseCMSCompactAtFullCollection -XX:CMSFullGCsBeforeCompaction=3 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/var/log/ambari-server/gc.ambari-server.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath=/var/log/ambari-server -XX:+DisableExplicitGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCompressedOops -Djava.security.auth.login.config=/etc/ambari-server/conf/krb5JAASLogin.conf -Djava.security.krb5.conf=/etc/krb5.conf -Djavax.security.auth.useSubjectCredsOnly=false'
+
+4.15.3	修改namenode、datanode 、Journalnode 、zkfc、balancer JVM参数
+vi /var/lib/ambari-server/resources/stacks/HDP/2.0.6/hooks/before-START/templates/hadoop-env.sh.j2
+在65行export HADOOP_OPTS="-Djava.net.preferIPv4Stack=true ${HADOOP_OPTS}"的前面新增：
+if [ "x${HADOOP_DATANODE_DATA_DIR}" != "x" ]; then
+export HADOOP_OPTS="${HADOOP_OPTS} -Dhadoop.datanode.data.dir=${HADOOP_DATANODE_DATA_DIR}"
+else
+    export HADOOP_OPTS="${HADOOP_OPTS} -Dhadoop.datanode.data.dir=data1/hadoopData, /data2/hadoopData, /data3/hadoopData, /data4/hadoopData, /data5/hadoopData, /data6/hadoopData, /data7/hadoopData, /data8/hadoopData, /data9/hadoopData, /data10/hadoopData, /data11/hadoopData, /data12/hadoopData, /data13/hadoopData, /data14/hadoopData "(第一个不能有/)
+fi
+将69行的export HADOOP_NAMENODE_OPTS="-server -XX:ParallelGCThreads=8 -XX:+UseConcMarkSweepGC -XX:ErrorFile={{hdfs_log_dir_prefix}}/$USER    /hs_err_pid%p.log -XX:NewSize={{namenode_opt_newsize}} -XX:MaxNewSize={{namenode_opt_maxnewsize}} -Xloggc:{{hdfs_log_dir_prefix}    }/$USER/gc.log-`date +'%Y%m%d%H%M'` -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xms{{namenode    _heapsize}} -Xmx{{namenode_heapsize}} -Dhadoop.security.logger=INFO,DRFAS -Dhdfs.audit.logger=INFO,DRFAAUDIT ${HADOOP_NAMENODE_O    PTS}"
+修改为：
+export HADOOP_NAMENODE_OPTS="-server -Xmx{{namenode_heapsize}} -Xms{{namenode_heapsize}} -XX:NewSize={{namenode_opt_newsize}} -XX:MaxNewSize={{namenode_opt_maxnewsize}} -XX:PermSize=4g -XX:MaxPermSize=4g -XX:SurvivorRatio=2  -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+UseCMSCompactAtFullCollection -XX:CMSFullGCsBeforeCompaction=3 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:{{hdfs_log_dir_prefix}}/$USER/gc.namenode.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath={{hdfs_log_dir_prefix}}/$USER -XX:+DisableExplicitGC -XX:CMSInitiatingOccupancyFraction=95 -XX:+UseCompressedOops ${HADOOP_NAMENODE_OPTS}"
+
+将73行的HADOOP_DATANODE_OPTS="-Xmx{{dtnode_heapsize}} -Dhadoop.security.logger=ERROR,DRFAS ${HADOOP_DATANODE_OPTS}"
+修改为：
+HADOOP_DATANODE_OPTS="${HADOOP_DATANODE_OPTS} -Xmx{{dtnode_heapsize}} -Xms{{dtnode_heapsize}} -Xmn18g -XX:PermSize=2g -XX:MaxPermSize=2g -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+UseCMSCompactAtFullCollection -XX:CMSFullGCsBeforeCompaction=3 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:{{hdfs_log_dir_prefix}}/$USER/gc.datanode.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath={{hdfs_log_dir_prefix}}/$USER -XX:+DisableExplicitGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCompressedOops"
+
+将74行的HADOOP_BALANCER_OPTS="-server -Xmx{{hadoop_heapsize}}m ${HADOOP_BALANCER_OPTS}"
+修改为：
+HADOOP_BALANCER_OPTS="${HADOOP_BALANCER_OPTS} -server -Xmx4g -Xms4g -Xmn1g -XX:PermSize=1g -XX:MaxPermSize=1g -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+UseCMSCompactAtFullCollection -XX:CMSFullGCsBeforeCompaction=3 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:{{hdfs_log_dir_prefix}}/$USER/gc.balancer.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath={{hdfs_log_dir_prefix}}/$USER -XX:+DisableExplicitGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCompressedOops"
+
+在75行增加以下参数：
+export HADOOP_JOURNALNODE_OPTS="${HADOOP_JOURNALNODE_OPTS} -Xmx16g -Xms16g -Xmn6g -XX:PermSize=2g -XX:MaxPermSize=2g -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+UseCMSCompactAtFullCollection -XX:CMSFullGCsBeforeCompaction=3 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:{{hdfs_log_dir_prefix}}/$USER/gc.journalnode.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath={{hdfs_log_dir_prefix}}/$USER -XX:+DisableExplicitGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCompressedOops"
+export HADOOP_ZKFC_OPTS="${HADOOP_ZKFC_OPTS}  -Xmx4g -Xms4g -Xmn1g -XX:PermSize=1g -XX:MaxPermSize=1g -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+UseCMSCompactAtFullCollection -XX:CMSFullGCsBeforeCompaction=3 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:{{hdfs_log_dir_prefix}}/$USER/gc.zkfc.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath={{hdfs_log_dir_prefix}}/$USER -XX:+DisableExplicitGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCompressedOops"
+4.15.4	修改zookeeper JVM参数
+vi /var/lib/ambari-server/resources/stacks/HDP/2.0.6/services/ZOOKEEPER/package/scripts/params.py
+将41行的zk_server_heapsize = "-Xmx1024m"
+修改为：
+zk_server_heapsize = "-Xmx4g"
+
+vi /var/lib/ambari-server/resources/stacks/HDP/2.0.6/services/ZOOKEEPER/package/templates/zookeeper-env.sh.j2
+将42行的export SERVER_JVMFLAGS="$SERVER_JVMFLAGS -Djava.security.auth.login.config={{zk_server_jaas_file}}"
+修改为：
+export SERVER_JVMFLAGS="{{zk_server_heapsize}} -Xms4g -Xmn1g -XX:PermSize=512m -XX:MaxPermSize=512m -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+UseCMSCompactAtFullCollection -XX:CMSFullGCsBeforeCompaction=3 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:${ZOO_LOG_DIR}/gc.zookeeper.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath=${ZOO_LOG_DIR} -XX:+DisableExplicitGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCompressedOops"
+
+4.15.5	修改YARN JVM参数
+vi /var/lib/ambari-server/resources/stacks/HDP/2.0.6/services/YARN/package/templates/yarn-env.sh.j2
+在88行增加以下参数：
+export YARN_RESOURCEMANAGER_OPTS="${YARN_RESOURCEMANAGER_OPTS} -Xms112g -XX:PermSize=2g -XX:MaxPermSize=2g -XX:+UseG1GC -XX:MaxGCPauseMillis=5000 -XX:InitiatingHeapOccupancyPercent=75 -XX:+UseCompressedStrings -XX:+UseStringCache -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:${YARN_LOG_DIR}/gc.resourcemanager.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath=${YARN_LOG_DIR} -XX:+DisableExplicitGC "
+在108行增加以下参数：
+export YARN_HISTORYSERVER_OPTS="${YARN_HISTORYSERVER_OPTS} -Xms4g -XX:PermSize=512m -XX:MaxPermSize=512m -XX:+UseG1GC -XX:MaxGCPauseMillis=5000 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:${YARN_LOG_DIR}/gc.historyserver.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath=${YARN_LOG_DIR} -XX:+DisableExplicitGC "
+在113行增加以下参数：
+export YARN_NODEMANAGER_OPTS="${YARN_NODEMANAGER_OPTS} –Xms16g -XX:PermSize=2g -XX:MaxPermSize=2g -XX:+UseG1GC -XX:MaxGCPauseMillis=5000 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:${YARN_LOG_DIR}/gc.nodemanager.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath=${YARN_LOG_DIR} -XX:+DisableExplicitGC"
+
+4.15.6	修改HBASE JVM参数
+vi /var/lib/ambari-server/resources/stacks/HDP/2.0.6/services/HBASE/package/templates/hbase-env.sh.j2
+将56行的export SERVER_GC_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:{{log_dir}}/gc.log-`date +'%Y%m%d%H%M'`"注释掉，即修改为：
+#export SERVER_GC_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:{{log_dir}}/gc.log-`date +'%Y%m%d%H%M'`"
+
+将65行的export HBASE_MASTER_OPTS="-Xmx{{master_heapsize}}"修改为：
+export HBASE_MASTER_OPTS="-Xmx{{master_heapsize}} -Xms{{master_heapsize}} –Xmn16g -XX:PermSize=2g -XX:MaxPermSize=2g -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+UseCMSCompactAtFullCollection -XX:CMSFullGCsBeforeCompaction=3 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:{{log_dir}}/gc.hbase-master.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath={{log_dir}} -XX:+DisableExplicitGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCompressedOops"
+
+将66行的export HBASE_REGIONSERVER_OPTS="-Xmn{{regionserver_xmn_size}} -XX:CMSInitiatingOccupancyFraction=70  -Xms{{regionserver_heapsize    }} -Xmx{{regionserver_heapsize}}"修改为：
+export HBASE_REGIONSERVER_OPTS=" -Xms{{regionserver_heapsize}} -Xmx{{regionserver_heapsize}} –Xmn8g -XX:PermSize=2g -XX:MaxPermSize=2g -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+UseCMSCompactAtFullCollection -XX:CMSFullGCsBeforeCompaction=3 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:{{log_dir}}/gc.hbase-regionserver.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath={{log_dir}} -XX:+DisableExplicitGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCompressedOops"
+
+4.15.7	增加spark的ganglia监控
+vi /var/lib/ambari-server/resources/stacks/HDP/2.0.6/services/GANGLIA/package/templates/gangliaClusters.conf.j2
+在55行增加以下配置：
+HDPSparkcluster     {{ganglia_server_host}}   9649
+
+4.15.8	启动ambari server
+ambari-server start
+停止命令：
+ambari-server stop
+查看ambari状态：
+ambari-server status
+
+4.16	安装HDP集群
+用浏览器打开页面：http://server:8080/
+用户名和命名均为admin。
+然后按步骤一步一步执行。
+4.16.1	输入集群的名称
+
+ 
+
+4.16.2	选择HDP版本
+ 
+
+4.16.3	配置集群机器的hosts和注册
+ 
+
+4.16.4	注册集群的hosts
+ 
+
+4.16.5	选择安装服务
+ 
+
+4.16.6	选择master
+ 
+
+4.16.7	选择salve和client
+Client所有机器都安装。
+ 
+
+4.16.8	初始化服务的配置项
+HDFS配置的参数如下：
+NameNode Java heap size：163840
+NameNode new generation size：8192
+NameNode maximum new generation size：8192
+下面这个参数设置为多个分区上目录：
+DataNode directories：/${hadoop.datanode.data.dir}
+备注：对于非标配机器，通过配置${HADOOP_DATANODE_DATA_DIR}环境变量，使用自己特定的配置。如:
+vi /etc/profile
+在末尾新增：
+export HADOOP_DATANODE_DATA_DIR=特定目录配置（第一个目录不能有/，多个目录用逗号分隔）
+DataNode maximum Java heap size：16384
+dfs.blocksize(Advanced)：134217728
+fs.trash.interval(Advanced):1440
+YARN配置的参数如下：
+YARN Java heap size：2048
+ResourceManager Java heap size：114688
+NodeManager Java heap size：16384
+AppTimelineServer Java heap size：4096
+ 
+Hive要选择已有的mysql数据库：
+ 
+在hive的Custom hive-site.xml配置上增加：
+hive.server2.authentication：NOSASL
+在Advanced那将hive.exec.failure.hooks、hive.exec.post.hooks、hive.exec.pre.hooks修改为空
+将hive.security.authenticator.manager的值设置为：org.apache.hadoop.hive.ql.security.HadoopDefaultAuthenticator
+
+ 
+
+ 
+
+4.16.9	安装集群组件和启动集群
+
+ 
+4.16.10	集群HDFS NameNode HA
+ 
+
+ 
+
+ 
+
+4.16.11	选择Second NameNode的服务器
+ 
+
+4.16.12	创建NameNode的CheckPoint
+ 
+
+4.16.13	安装组件Additional NameNode和JournalNodes
+ 
+ 
+
+4.16.14	初始化JournalNodes
+ 
+
+4.16.15	启动组件
+ 
+
+4.16.16	初始化NameNode HA 元数据
+ 
+
+
+ 
+
+4.16.17	HBase Master HA
+在没有安装HBase Master的master机器上新增组件，选择HBase Master安装。
+ 
+
+4.17	修改HIVE和WebHcat的JVM启动参数
+在安装Hive和WebHcat的机器上修改完以下参数后，通过ambari页面重启Hive和WebHcat。
+4.17.1	修改hive-server2 JVM参数
+vi /usr/lib/hive/bin/ext/hiveserver2.sh
+在18行增加以下参数：
+export HADOOP_CLIENT_OPTS="${HADOOP_CLIENT_OPTS} -Xmx64g -Xms64g -Xmn24g -XX:PermSize=2g -XX:MaxPermSize=2g -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+UseCMSCompactAtFullCollection -XX:CMSFullGCsBeforeCompaction=3 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/var/log/hive/gc.hiveserver2.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath=/var/log/hive -XX:+DisableExplicitGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCompressedOops"
+
+4.17.2	修改hive-metastore JVM参数
+vi /usr/lib/hive/bin/ext/metastore.sh
+在18行增加以下参数：
+export HADOOP_CLIENT_OPTS="${HADOOP_CLIENT_OPTS} -Xmx64g -Xms64g -Xmn24g -XX:PermSize=2g -XX:MaxPermSize=2g -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+UseCMSCompactAtFullCollection -XX:CMSFullGCsBeforeCompaction=3 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/var/log/hive/gc.metastore.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath=/var/log/hive -XX:+DisableExplicitGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCompressedOops"
+4.17.3	修改webhcat JVM参数
+vi /usr/lib/hive-hcatalog/sbin/webhcat_server.sh
+在219行增加以下参数：
+export HADOOP_CLIENT_OPTS="${HADOOP_CLIENT_OPTS} -Xmx4g -Xms4g -Xmn1g -XX:PermSize=1g -XX:MaxPermSize=1g -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+UseCMSCompactAtFullCollection -XX:CMSFullGCsBeforeCompaction=3 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/var/log/webhcat/gc.webhcat.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath=/var/log/webhcat -XX:+DisableExplicitGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCompressedOops"
+
+4.18	安装hadoop扩展包
+在集群里所有机器上都按以下步骤操作：
+1、进到/usr/lib/hadoop目录：
+cd /usr/lib/hadoop
+2、将sfpay-hadoop-hdfs-1.0.jar上传到该目录：
+sz （选择该jar包）
+3、创建软连接：
+ln -s sfpay-hadoop-hdfs-1.0.jar sfpay-hadoop-hdfs.jar
+4、	通过ambari web页面修改hdfs的配置
+在Custom hdfs-site.xml那里添加属性
+dfs.client.failover.proxy.provider.sfpay：com.sfpay.hadoop.hdfs.server.namenode.ha.ActiveNameNodeFirstFailoverProxyProvider
+5、重启hdfs。
+4.19	安装spark集群
+先在装有ambari server的机器上装好spark（该spark只用来submit job），再拷贝到其他机器上。
+Spark的版本为spark-1.1.0-sf.tar.gz
+4.19.1	安装scala
+创建/usr/local/scala目录：
+mkdir /usr/local/scala
+将scala的scala-2.10.4.tgz包解压缩到/usr/local/scala目录下：
+cd /usr/local/scala
+ln –s scala-2.10.4 default
+配置scala环境变量：
+vi /etc/profile.d/bigdata.sh
+在该文件后面添加以下代码：
+export SCALA_HOME="/usr/local/scala/default"
+export PATH=$PATH:$SCALA_HOME/bin
+保存退出vi。
+生效配置：
+source /etc/profile.d/bigdata.sh
+4.19.2	安装spark
+创建/usr/local/spark目录：
+mkdir /usr/local/spark
+将spark的spark-1.1.0-sf .tar.gz包解压缩到/usr/local/spark目录下：
+cd /usr/local/spark
+ln –s spark-1.1.0-sf default
+创建以下目录：
+/data1/sparkData, /data2/sparkData, /data3/sparkData, /data4/sparkData, /data5/sparkData, /data6/sparkData, /data7/sparkData, /data8/sparkData, /data9/sparkData, /data10/sparkData, /data11/sparkData, /data12/sparkData, /data13/sparkData, /data14/sparkData
+
+4.19.3	配置环境变量
+配置spark环境变量：
+vi /etc/profile.d/bigdata.sh
+在该文件后面添加以下代码：
+export SPARK_HOME="/usr/local/spark/default"
+保存退出vi。
+生效配置：
+source /etc/profile.d/bigdata.sh
+4.19.4	配置slaves
+vi /usr/local/spark/default/conf/slaves
+在该文件上添加spark worker的域名，如：
+slaver01.bigdata.sfp.com
+slaver02.bigdata.sfp.com
+4.19.5	配置启动参数
+拷贝spark目录到其他机器,如：
+scp –r /usr/local/spark root@10.79.11.223:/usr/local
+拷贝环境变量配置文件到其他机器，如：
+scp /etc/profile.d/bigdata.sh root@10.79.11.223: /etc/profile.d/
+逐个机器生效配置文件：
+source /etc/profile.d/bigdata.sh
+
+修改spark的启动参数：
+vi /usr/local/spark/default/conf/spark-env.sh
+根据线上环境，配置Spark用于写中间数据，如RDD Cache，Shuffle，Spill等数据的位置，配置多个路径（用逗号分隔），挂载不同的盘，增加整体IO带宽：
+export SPARK_LOCAL_DIRS=/hadoop/spark/data/
+添加以下参数：
+Master参数
+
+export HADOOP_HOME=/usr/lib/hadoop
+export HADOOP_CONF_DIR=/etc/hadoop/conf
+export LD_LIBRARY_PATH=$HADOOP_HOME/lib/native/Linux-amd64-64/
+export SPARK_LIBRARY_PATH=$SPARK_LIBRARY_PATH:$HADOOP_HOME/lib/native/
+#export SPARK_WORKER_INSTANCES=2
+#export SPARK_WORKER_CORES=4
+export SPARK_MASTER_WEBUI_PORT=9080
+export SPARK_WORKER_WEBUI_PORT=9090
+export SPARK_DAEMON_MEMORY="48g"
+export SPARK_MASTER_OPTS=" -XX:PermSize=2g -XX:MaxPermSize=2g -XX:+UseG1GC -XX:MaxGCPauseMillis=5000 -XX:InitiatingHeapOccupancyPercent=75 -XX:+UseCompressedStrings -XX:+UseStringCache -Dspark.storage.blockManagerHeartBeatMs=60000 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$SPARK_HOME/logs/gc.master.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${SPARK_HOME}/logs"
+
+export SPARK_WORKER_OPTS=" -XX:PermSize=2g -XX:MaxPermSize=2g -XX:+UseG1GC -XX:MaxGCPauseMillis=5000 -XX:InitiatingHeapOccupancyPercent=75 -XX:+UseCompressedStrings -XX:+UseStringCache -Dspark.storage.blockManagerHeartBeatMs=60000 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$SPARK_HOME/logs/gc.worker.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${SPARK_HOME}/logs"
+
+export SPARK_DAEMON_JAVA_OPTS="-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=master01.bigdata.sfp.com:2181,master05.bigdata.sfp.com:2181,master06.bigdata.sfp.com:2181 -Dspark.deploy.zookeeper.dir=/spark"
+
+
+Worker参数
+
+export HADOOP_HOME=/usr/lib/hadoop
+export HADOOP_CONF_DIR=/etc/hadoop/conf
+export LD_LIBRARY_PATH=$HADOOP_HOME/lib/native/Linux-amd64-64/
+export SPARK_LIBRARY_PATH=$SPARK_LIBRARY_PATH:$HADOOP_HOME/lib/native/
+#export SPARK_WORKER_INSTANCES=2
+#export SPARK_WORKER_CORES=4
+export SPARK_MASTER_WEBUI_PORT=9080
+export SPARK_WORKER_WEBUI_PORT=9090
+export SPARK_DAEMON_MEMORY="16g"
+export SPARK_MASTER_OPTS=" -XX:PermSize=2g -XX:MaxPermSize=2g -XX:+UseG1GC -XX:MaxGCPauseMillis=5000 -XX:InitiatingHeapOccupancyPercent=75 -XX:+UseCompressedStrings -XX:+UseStringCache -Dspark.storage.blockManagerHeartBeatMs=60000 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$SPARK_HOME/logs/gc.master.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${SPARK_HOME}/logs"
+
+export SPARK_WORKER_OPTS=" -XX:PermSize=2g -XX:MaxPermSize=2g -XX:+UseG1GC -XX:MaxGCPauseMillis=5000 -XX:InitiatingHeapOccupancyPercent=75 -XX:+UseCompressedStrings -XX:+UseStringCache -Dspark.storage.blockManagerHeartBeatMs=60000 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$SPARK_HOME/logs/gc.worker.log-`date +'%Y%m%d%H%M%S'` -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${SPARK_HOME}/logs"
+
+export SPARK_DAEMON_JAVA_OPTS="-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=master01.bigdata.sfp.com:2181,master05.bigdata.sfp.com:2181,master06.bigdata.sfp.com:2181 -Dspark.deploy.zookeeper.dir=/spark"
+
+添加spark-defaults.conf配置：
+vi spark-defaults.conf
+增加以下参数：
+spark.serializer        org.apache.spark.serializer.KryoSerializer
+spark.kryoserializer.buffer.mb          5
+spark.shuffle.consolidateFiles          true
+spark.executor.memory                   2048m
+spark.executorEnv.HADOOP_HOME        /usr/lib/hadoop
+spark.executorEnv.HADOOP_CONF_DIR    /etc/hadoop/conf
+spark.eventLog.enabled           true
+spark.eventLog.dir               hdfs://sfpay/app-logs/spark/
+spark.history.ui.port   18080
+spark.yarn.historyServer.address master06.bigdata.sfp.com:18080
+spark.executor.extraJavaOptions  -XX:+UseG1GC -XX:MaxGCPauseMillis=5000 -XX:InitiatingHeapOccupancyPercent=75 -XX:+UseCompressedStrings -XX:+UseStringCache
+spark.driver.extraJavaOptions  -XX:+UseG1GC -XX:MaxGCPauseMillis=5000 -XX:InitiatingHeapOccupancyPercent=75 -XX:+UseCompressedStrings -XX:+UseStringCache
+4.19.6	启动集群
+更改spark目录的用户：
+chown -R spark /usr/local/spark
+切换spark用户：
+su spark
+优先启动装有mysql master和hive metastore的机器上的spark master,再启动其他机器上的spark master:
+sh /usr/local/spark/default/sbin/start-master.sh
+启动完spark master后，启动spark worker：
+sh /usr/local/spark/default/sbin/start-slaves.sh
+
+在master06.bigdata.sfp.com机器上用spark用户启动HistoryServer：
+sh usr/local/spark/default/sbin/ start-history-server.sh hdfs://sfpay/app-logs/spark/
+
+5	集成spark到ganglia监控
+5.1.1	创建/etc/ganglia/hdp/HDPSparkcluster目录
+在master03机器上执行以下操作：
+cd /etc/ganglia/hdp
+cp HDPJournalNode HDPSparkcluster
+vi HDPSparkcluster/gmond.core.conf
+将26行的name = "HDPDataNode"改为name = " HDPSparkcluster"
+将46行的8659改为9649，并将最后一行修改为include ("/etc/ganglia/hdp/HDPSparkcluster/conf.d/*.conf")
+vi HDPSparkcluster/conf.d/gmond.slave.conf
+将11行的8659改为9649
+vi HDPSparkcluster/conf.d/gmond.master.conf
+将11行的8659改为9649，并将最后一行修改为include ("/etc/ganglia/hdp/HDPSparkcluster/conf.d/*.conf")
+rm -rf gmond.slave.conf
+mkdir /var/run/ganglia/hdp/HDPSparkcluster
+
+在所有安装有spark master或worker的机器上执行以下操作：
+cd /etc/ganglia/hdp
+cp HDPJournalNode HDPSparkcluster
+vi HDPSparkcluster/gmond.core.conf
+将26行的name = "HDPDataNode"改为name = " HDPSparkcluster"
+将46行的8659改为9649，并将最后一行修改为include ("/etc/ganglia/hdp/HDPSparkcluster/conf.d/*.conf")
+vi HDPSparkcluster/conf.d/gmond.slave.conf
+将11行的8659改为9649，并将最后一行修改为include ("/etc/ganglia/hdp/HDPSparkcluster/conf.d/*.conf")
+
+5.1.2	创建/var/run/ganglia/hdp/HDPSparkcluster目录
+在所有安装有spark master或worker的机器上执行以下操作：
+mkdir /var/run/ganglia/hdp/HDPSparkcluster
+5.1.3	重启ganglia monitor
+通过ambari web界面重启所有节点的ganglia monitor
+6	验证HDP集群
+6.1	Ambari的冒烟测试
+在ambari的控制台页面上，选择Services，在Service Actions里面有个Run Service Check选项。分别选中HDFS、YARN、MapReduce2、HBase、Hive、WebHCat、Zookeeper，点击相应的Run Service Check，执行Service Check。
+ 
+6.2	检查整个文件系统的健康状况
+hadoop  fsck /
+Connecting to namenode via http://master01.bigdata.sfp.com:50070
+FSCK started by hdfs (auth:SIMPLE) from /10.79.11.223 for path / at Mon Sep 29 17:22:33 CST 2014
+................................Status: HEALTHY
+ Total size:    146128189 B (Total open files size: 45 B)
+ Total dirs:    42
+ Total files:   32
+ Total symlinks:                0 (Files currently being written: 5)
+ Total blocks (validated):      32 (avg. block size 4566505 B) (Total open file blocks (not validated): 5)
+ Minimally replicated blocks:   32 (100.0 %)
+ Over-replicated blocks:        0 (0.0 %)
+ Under-replicated blocks:       0 (0.0 %)
+ Mis-replicated blocks:         0 (0.0 %)
+ Default replication factor:    3
+ Average block replication:     3.0
+ Corrupt blocks:                0
+ Missing replicas:              0 (0.0 %)
+ Number of data-nodes:          4
+ Number of racks:               1
+FSCK ended at Mon Sep 29 17:22:33 CST 2014 in 13 milliseconds
+
+The filesystem under path '/' is HEALTHY
+
+上面红色的参数是非常重要的，status必须要是HEALTHY，否则整个集群是有问题的。
+Corrupt blocks、Missing replicas必须为0。
+浏览器访问active NameNode http://master01.bigdata.sfp.com:50070，查看namenode和datanode是否正常：
+ 
+ 
+浏览器访问standby NameNode http://master02.bigdata.sfp.com:50070/，查看namenode和datanode是否正常：
+ 
+ 
+
+6.3	检查NameNode的切换是否正常
+在ambari server的页面上停掉active NameNode，看stanby NameNode是否正常切换为active状态。
+ 
+6.4	查看文件系统的基本信息和统计信息
+hdfs dfsadmin -report
+Configured Capacity: 418457042944 (389.72 GB)
+Present Capacity: 400467726336 (372.96 GB)
+DFS Remaining: 400024481792 (372.55 GB)
+DFS Used: 443244544 (422.71 MB)
+DFS Used%: 0.11%
+Under replicated blocks: 0
+Blocks with corrupt replicas: 0
+Missing blocks: 0
+
+-------------------------------------------------
+Datanodes available: 4 (4 total, 0 dead)
+
+Live datanodes:
+Name: 10.79.11.222:50010 (master01.bigdata.sfp.com)
+Hostname: master01.bigdata.sfp.com
+Decommission Status : Normal
+Configured Capacity: 104614260736 (97.43 GB)
+DFS Used: 147730432 (140.89 MB)
+Non DFS Used: 4501676032 (4.19 GB)
+DFS Remaining: 99964854272 (93.10 GB)
+DFS Used%: 0.14%
+DFS Remaining%: 95.56%
+Configured Cache Capacity: 0 (0 B)
+Cache Used: 0 (0 B)
+Cache Remaining: 0 (0 B)
+Cache Used%: 100.00%
+Cache Remaining%: 0.00%
+Last contact: Tue Sep 30 09:50:13 CST 2014
+
+
+Name: 10.79.11.227:50010 (slaver02.bigdata.sfp.com)
+Hostname: slaver02.bigdata.sfp.com
+Decommission Status : Normal
+Configured Capacity: 104614260736 (97.43 GB)
+DFS Used: 86016 (84 KB)
+Non DFS Used: 4497330176 (4.19 GB)
+DFS Remaining: 100116844544 (93.24 GB)
+DFS Used%: 0.00%
+DFS Remaining%: 95.70%
+Configured Cache Capacity: 0 (0 B)
+Cache Used: 0 (0 B)
+Cache Remaining: 0 (0 B)
+Cache Used%: 100.00%
+Cache Remaining%: 0.00%
+Last contact: Tue Sep 30 09:50:14 CST 2014
+
+
+Name: 10.79.11.223:50010 (master02.bigdata.sfp.com)
+Hostname: master02.bigdata.sfp.com
+Decommission Status : Normal
+Configured Capacity: 104614260736 (97.43 GB)
+DFS Used: 147730432 (140.89 MB)
+Non DFS Used: 4498481152 (4.19 GB)
+DFS Remaining: 99968049152
+ (93.10 GB)
+DFS Used%: 0.14%
+DFS Remaining%: 95.56%
+Configured Cache Capacity: 0 (0 B)
+Cache Used: 0 (0 B)
+Cache Remaining: 0 (0 B)
+Cache Used%: 100.00%
+Cache Remaining%: 0.00%
+Last contact: Tue Sep 30 09:50:14 CST 2014
+
+
+Name: 10.79.11.226:50010 (slaver01.bigdata.sfp.com)
+Hostname: slaver01.bigdata.sfp.com
+Decommission Status : Normal
+Configured Capacity: 104614260736 (97.43 GB)
+DFS Used: 147697664 (140.86 MB)
+Non DFS Used: 4491829248 (4.18 GB)
+DFS Remaining: 99974733824 (93.11 GB)
+DFS Used%: 0.14%
+DFS Remaining%: 95.57%
+Configured Cache Capacity: 0 (0 B)
+Cache Used: 0 (0 B)
+Cache Remaining: 0 (0 B)
+Cache Used%: 100.00%
+Cache Remaining%: 0.00%
+Last contact: Tue Sep 30 09:50:15 CST 2014
+
+6.5	查看hive状态
+如果HiveServer2 process Connection refused，则查看hive server2的日志，如果发现org.apache.hadoop.ipc.RemoteException(org.apache.hadoop.security.AccessControlException): Permission denied: user=hive, access=WRITE，则修改hdfs的配置文件，将hadoop.proxyuser.hive.groups的值设置为*。
+ 
+
+7	升级替换HDP集群的apache
+集群里每台机器均要升级apache。
+7.1	安装最新的apache和openssl
+如已安装，则这一步跳过，否则参考安装openssl和安装apache章节。
+7.2	修改apache配置文件
+修改${apache.home}(/usr/local/httpd)/conf/http.conf文件:
+在32行添加以下参数：
+PidFile run/httpd.pid
+Include conf.d/*.conf
+将176行的
+User daemon
+Group daemon
+修改为：
+User apache
+Group apache
+
+7.3	复制相关文件
+复制${ambari.apache.home}(etc/httpd)/conf/conf.d目录到${apache.home}(/usr/local/ httpd)
+在${apache.home}(/usr/local/httpd)目录下创建软连接：
+ln -s /var/run/httpd run
+复制${ambari.apache.root}(/var/www/html/..)/cgi-bin/rrd.py文件到${apache.home}(/usr/
+local/httpd)/cgi-bin
+复制${ambari.apache.home}(etc/httpd)/modules/libphp5.so文件到${apache.home}(/usr/lo
+cal/httpd)/modules
+
+7.4	配置apache启动项
+删除原来的apache启动项及启动文件：
+chkconfig --del httpd
+rm -rf /etc/rc.d/init.d/httpd
+rm -rf /etc/init.d/httpd
+复制文件及设置到启动项
+cp -a ${apache.home}/bin/apachectl /etc/rc.d/init.d/httpd
+vi /etc/rc.d/init.d/httpd，增加以下参数：
+#chkconfig: 345 70 70
+#description: apache
+增加启动项：
+chkconfig --add httpd
+
+
+
+8	升级替换nagios服务器的PHP
+在安装有nagios server的服务器上安装替换php。
+8.1	编译安装php包（php-5.6.1.tar.gz）
+直接获取附件中的或者用下面命令下载：
+cd /usr
+wget http://php.net/get/php-5.6.1.tar.gz/from/a/mirror
+tar -xzf php-5.6.1.tar.gz
+cd php-5.6.1
+./configure --prefix=/usr/local/php --with-apxs2=${apache.home}(/usr/local/httpd)/bin/apxs --with-libxml-dir=/usr/lib64 --with-MySQL
+make && make install
+
+vi ${apache.home}(/usr/local/apache)/bin/http.conf 注释掉
+#LoadModule php5_module        modules/libphp5.so
+将下面几个配置的#号去掉
+#LoadModule dir_module modules/mod_dir.so
+#LoadModule actions_module modules/mod_actions.so
+#LoadModule speling_module modules/mod_speling.so
+#LoadModule cgi_module modules/mod_cgi.so
+即是修改为：
+LoadModule dir_module modules/mod_dir.so
+LoadModule actions_module modules/mod_actions.so
+LoadModule speling_module modules/mod_speling.so
+LoadModule cgi_module modules/mod_cgi.so
+
+
+9	HDP集群节点扩展
+9.1	生成模板压缩包
+在slave服务器上执行脚本 ，生成节点克隆的拷贝模板agent.zip。
+9.2	下载脚本目录
+脚本的svn路径为：http://10.79.11.211/svn/EA/trunk/Ambari/sf-ext/scripts，同时将模板agent.zip拷贝到当前目录。
+9.3	扩展节点
+进到脚本目录，按以下步骤操作：
+1、	先编辑host文件，配置好克隆的机器ip和hostname，每行的配置格式为ip+空格+hostname，如：10.79.11.228 slaver03.bigdata.sfp.com。该文件必须只配置新增扩展的节点的hostname。
+2、	编辑sparkMasterHost文件（vi sparkMasterHost），配置spark matser的ip和hostname。
+192.168.200.15  master05.bigdata.sfp.com
+192.168.200.16  master06.bigdata.sfp.com
+3、	将当前目录上传到安装有ambari-server的机器
+4、	设置新增机器的无密ssh
+    首先得确保所有的新增机器的密码一样和脚本installRsaKey、scpRsaKey、startSparkWorker是可以执行的。
+然后在当前目录执行命令 sh configSSH.sh 新增机器的密码
+
+5、在当前目录执行命令 sh updateHosts.sh
+6、在当前目录执行命令 sh agentClone.sh host
+7、修改ambari.properties文件(根据已安装环境配置)，包括ambari-server的db配置、ambari-server地址配置、关于hadoop集群的配置
+8、执行python install.py命令，将组件信息注册到ambari-server数据库
+9、重启ambari-server
+10、执行python start.py命令，启动所有克隆的机器的hadoop相关组件。
+9.4	验证扩展
+参考验证HDP集群。
+
+10	集群初始化数据导入
+10.1	抽取数据到HDFS
+在master3上执行数据抽取脚本 ，通过sqoop client将oracle数据库的数据抽取到HDFS。
+备注：脚本需要根据实际情况修改数据库连接参数。
+11	集群关键参数
+11.1	集群web所用端口
+下面这几个端口是需要开通访问策略的。
+Ambari web：8080
+Spark：9080、9090、9000（log）、4040、4047（Application Detail UI）
+Apache：80
+NameNode：50070
+DataNode：50010
+NodeManager:8042
+ResourceManager：8088
+JobHistory：19888
+HBase Master：60010
+
+
+预留端口：
+9091-10000
+
+11.2	HDFS参数
+NameNode directories：/hadoop/hadoop/hdfs/namenode
+SecondaryNameNode Checkpoint directory：/hadoop/hadoop/hdfs/namesecondary
+DataNode directories：/hadoop/hadoop/hdfs/data
+Hadoop Log Dir Prefix：/var/log/hadoop
+Hadoop PID Dir Prefix：/var/run/hadoop
+Block replication：3
+dfs.datanode.address：0.0.0.0:50010
+dfs.datanode.balance.bandwidthPerSec：6250000
+dfs.datanode.http.address：0.0.0.0:50075
+dfs.datanode.ipc.address：0.0.0.0:8010
+dfs.datanode.max.transfer.threads：1024
+dfs.domain.socket.path：/var/lib/hadoop-hdfs/dn_socket
+dfs.heartbeat.interval：3
+dfs.hosts.exclude：/etc/hadoop/conf/dfs.exclude
+dfs.https.port：50470
+dfs.journalnode.edits.dir：/hadoop/hdfs/journal
+dfs.journalnode.http-address：0.0.0.0:8480
+dfs.namenode.checkpoint.txns：1000000
+dfs.namenode.handler.count：100
+dfs.namenode.http-address：master01.bigdata.sfp.com:50070
+dfs.namenode.https-address：master01.bigdata.sfp.com:50470
+fs.defaultFS：hdfs://sfpay
+io.compression.codecs：org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.DefaultCodec
+io.serializations：org.apache.hadoop.io.serializer.WritableSerialization
+io.file.buffer.size：131072
+ipc.client.connect.max.retries：50
+ipc.client.connection.maxidletime：30000
+ipc.client.idlethreshold：8000
+hadoop.log.file=hadoop.log
+dfs.ha.namenodes.sfpay: nn1,nn2
+dfs.namenode.rpc-address.sfpay.nn1: master01.bigdata.sfp.com:8020
+dfs.namenode.rpc-address.sfpay.nn2: master02.bigdata.sfp.com:8020
+dfs.namenode.http-address.sfpay.nn1: master01.bigdata.sfp.com:50070
+dfs.namenode.shared.edits.dir: qjournal://master01.bigdata.sfp.com:8485;master02.bigdata.sfp.com:8485;slaver02.bigdata.sfp.com:8485/sfpay
+hbase.rootdir: hdfs://sfpay/apps/hbase/data
+
+11.3	YARN参数
+yarn.nodemanager.log-dirs: /hadoop/hadoop/yarn/log
+yarn.nodemanager.local-dirs: /hadoop/hadoop/yarn/local
+yarn.nodemanager.remote-app-log-dir: /app-logs
+yarn.nodemanager.remote-app-log-dir-suffix: logs
+yarn.nodemanager.log.retain-second: 604800
+yarn.timeline-service.leveldb-timeline-store.path: /var/log/hadoop-yarn/timeline
+yarn.timeline-service.webapp.address: master02.bigdata.sfp.com:8188
+yarn.timeline-service.webapp.https.address: master02.bigdata.sfp.com:8190
+yarn.timeline-service.address: master02.bigdata.sfp.com:10200
+Capacity Scheduler:
+yarn.scheduler.capacity.maximum-am-resource-percent=0.2
+yarn.scheduler.capacity.maximum-applications=10000
+yarn.scheduler.capacity.node-locality-delay=40
+yarn.scheduler.capacity.root.acl_administer_queue=*
+yarn.scheduler.capacity.root.capacity=100
+yarn.scheduler.capacity.root.default.acl_administer_jobs=*
+yarn.scheduler.capacity.root.default.acl_submit_applications=*
+yarn.scheduler.capacity.root.default.capacity=100
+yarn.scheduler.capacity.root.default.maximum-capacity=100
+yarn.scheduler.capacity.root.default.state=RUNNING
+yarn.scheduler.capacity.root.default.user-limit-factor=1
+yarn.scheduler.capacity.root.queues=default
+yarn.scheduler.capacity.root.unfunded.capacity=50
+
+YARN Log Dir Prefix: /var/log/hadoop-yarn
+YARN PID Dir Prefix: /var/run/hadoop-yarn
+yarn.log.server.url: http://master02.bigdata.sfp.com:19888/jobhistory/logs
+yarn.nodemanager.disk-health-checker.min-healthy-disks:0.25
+yarn.nodemanager.health-checker.interval-ms: 135000
+yarn.nodemanager.health-checker.script.timeout-ms: 60000
+yarn.nodemanager.log-aggregation.compression-type: gz
+yarn.resourcemanager.address: master02.bigdata.sfp.com:8050
+yarn.resourcemanager.admin.address: master02.bigdata.sfp.com:8141
+yarn.resourcemanager.resource-tracker.address: master02.bigdata.sfp.com:8025
+yarn.resourcemanager.scheduler.address: master02.bigdata.sfp.com:8030
+yarn.resourcemanager.webapp.address: master02.bigdata.sfp.com:8088
+
+11.4	MapReduce2参数
+Mapreduce Log Dir Prefix：/var/log/hadoop-mapreduce
+Mapreduce PID Dir Prefix：/var/run/hadoop-mapreduce
+mapreduce.job.reduce.slowstart.completedmaps：0.05
+mapreduce.jobhistory.address：master02.bigdata.sfp.com:10020
+mapreduce.jobhistory.done-dir：/mr-history/done
+mapreduce.jobhistory.intermediate-done-dir：/mr-history/tmp
+mapreduce.jobhistory.webapp.address：master02.bigdata.sfp.com:19888
+mapreduce.reduce.shuffle.input.buffer.percent：0.7
+mapreduce.reduce.shuffle.merge.percent：0.66
+mapreduce.reduce.shuffle.parallelcopies：30
+mapreduce.shuffle.port：13562
+
+11.5	HIVE参数
+
+Hive Log Dir: /var/log/hive
+Hive PID Dir: /var/run/hive
+hive.metastore.warehouse.dir: /apps/hive/warehouse
+hive.metastore.uris: thrift://master02.bigdata.sfp.com:9083
+
+11.6	WebHCat参数
+WebHCat Log Dir: /var/log/webhcat
+WebHCat PID Dir: /etc/run/webhcat
+templeton.zookeeper.hosts: master01.bigdata.sfp.com:2181,master02.bigdata.sfp.com:2181,slaver02.bigdata.sfp.com:2181
+
+11.7	HBase参数
+HFile block cache size:0.40
+Zookeeper timeout for HBase Session: 30000ms
+HBase Client Scanner Caching:100rows
+HBase Client Maximum key-value Size: 10485760bytes
+HBase Log Dir: /var/log/hbase
+HBase PID Dir: /var/run/hbase
+HBase local directory: /hadoop/hadoop/hbase
+hbase.zookeeper.quorum: master01.bigdata.sfp.com,master02.bigdata.sfp.com,slaver02.bigdata.sfp.com
+hbase.master.info.port:60010
+hbase.regionserver.info.port:60030
+hbase.rootdir: hdfs://master01.bigdata.sfp.com:8020/apps/hbase/data
+zookeeper.znode.parent: /hbase-unsecure
+
+11.8	Zookeeper参数
+
+ZooKeeper directory: /hadoop/hadoop/zookeeper
+Length of single Tick: 2000ms
+Ticks to allow for sync at Init:10
+Ticks to allow for sync at Runtime:5
+
+配置文件：/etc/zookeeper/conf/zoo.cfg
+数据目录：/hadoop/hadoop/zookeeper
+日志文件：/var/log/zookeeper/zookeeper.out
+11.9	Ganglia参数
+Ganglia rrdcached base directory: /var/lib/ganglia/rrds
+
+
+11.10	Nagios参数
+配置文件：/etc/nagios/nagios.cfg、/etc/nagios/objects/*（监控项）
+日志：/var/log/nagios/nagios.log
+     /var/log/nagios/archives
+11.11	Spark参数
+配置文件目录：/var/log/spark/default/conf/
+日志目录：/var/log/spark/default/logs/
+数据缓存目录：/hadoop/spark/data/
+
+11.12	Ambari参数
+配置文件目录：/etc/ambari-server/conf/(ambari-server)、/etc/ambari-agent/conf/(ambari-agent)
+日志目录：/var/log/ambari-server/(ambari-server)、/var/log/ambari-agent/(ambari-agent)
+组件配置模板目录：/var/lib/ambari-server/resources/stacks/HDP/2.0.6/services/
+备注：组件配置文件的修改基本是要改这里的模板文件，再重启ambari-server才生效
+12	附件
+集群用到的tar包SVN地址：http://10.79.11.211/svn/EA/trunk/Ambari/sf-ext/tar
